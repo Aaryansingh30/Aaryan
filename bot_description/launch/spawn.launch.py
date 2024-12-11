@@ -3,6 +3,8 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import PathJoinSubstitution
+from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import Node
 
 def generate_launch_description():
@@ -10,14 +12,9 @@ def generate_launch_description():
     package_name = "bot_description"
     robot_name = "AaryanSingh_Bot"
 
-    # Launch RViz
-    rviz_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            os.path.join(get_package_share_directory(package_name), 'launch', 'rviz.launch.py')
-        ]),
-        launch_arguments={'use_sim_time': 'true'}.items()
+    rviz_launch_path = PathJoinSubstitution(
+        [FindPackageShare(package_name), 'launch', 'rviz.launch.py']
     )
-
     # Launch Gazebo 
     gazebo_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
@@ -38,7 +35,9 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        rviz_launch,
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(rviz_launch_path)
+        ),
         gazebo_launch,
         spawn_entity,
     ])
