@@ -10,17 +10,6 @@ def generate_launch_description():
     package_name = "bot_description"
     robot_name = "AaryanSingh_Bot"
 
-    # Path to the robot's URDF
-    urdf_file = os.path.join(
-        get_package_share_directory(package_name),
-        'urdf',
-        'bot.urdf.xacro'
-    )
-
-    # Convert xacro to XML
-    with open(urdf_file, 'r') as infp:
-        robot_description = infp.read()
-
     # Launch RViz
     rviz_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
