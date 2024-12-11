@@ -1,8 +1,10 @@
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, ExecuteProcess
+from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
+from launch_ros.actions import Node
+
 
 
 def generate_launch_description():
@@ -10,18 +12,17 @@ def generate_launch_description():
     spawn_launch_path = PathJoinSubstitution(
         [FindPackageShare('bot_description'), 'launch', 'spawn.launch.py']
     )
-    teleop_keyboard=ExecuteProcess(
-            cmd=[
-                'gnome-terminal', '--', 
-                'ros2', 'run', 'teleop_twist_keyboard', 'teleop_twist_keyboard',
-            ],
-            output='screen'
-        )
+    teleop_keyboard = Node(
+        package='teleop_twist_keyboard',
+        executable='teleop_twist_keyboard',
+        name='teleop_keyboard',
+        output='screen'
+    )
 
     return LaunchDescription([
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(spawn_launch_path)
         ),
-        
+
         teleop_keyboard,
     ])
