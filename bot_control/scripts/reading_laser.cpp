@@ -12,45 +12,69 @@ public:
             10,      
             std::bind(&ScanValuesNode::callback, this, std::placeholders::_1)
         );
+
+        filtered_scan_publisher_ = this->create_publisher<sensor_msgs::msg::LaserScan>("/filtered_scan", 10);
     }
 
 private:
     void callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
     {
-        float angle_min_ = 0.0f;
-        float angle_max_ = 2.09f;
+        const float start_angle = -60.0f * (M_PI / 180.0f);  
+        const float end_angle = 60.0f * (M_PI / 180.0f);    
+        const float obstacle_threshold = 5.0f;              
 
-        RCLCPP_INFO(this->get_logger(), "Modified Angle Min: %f", angle_min_);
-        RCLCPP_INFO(this->get_logger(), "Modified Angle Max: %f", angle_max_);
+        
+        int start_index = static_cast<int>((start_angle - msg->angle_min) / msg->angle_increment);
+        int end_index = static_cast<int>((end_angle - msg->angle_min) / msg->angle_increment);
 
-        RCLCPP_INFO(this->get_logger(), "Header: %d", msg->header.stamp.sec);
-        RCLCPP_INFO(this->get_logger(), "Angle Increment: %f", msg->angle_increment);
-        RCLCPP_INFO(this->get_logger(), "Range Min: %f", msg->range_min);
-        RCLCPP_INFO(this->get_logger(), "Range Max: %f", msg->range_max);
-        RCLCPP_INFO(this->get_logger(), "Ranges: size=%lu", msg->ranges.size());
-        RCLCPP_INFO(this->get_logger(), "Intensities: size=%lu", msg->intensities.size());
-
-        float angle_min = angle_min_;
-        float angle_increment = msg->angle_increment;
-
-        float start_angle = 0.0f;
-        float end_angle = 2.09f;
-
-        int start_index = static_cast<int>((start_angle - angle_min) / angle_increment);
-        int end_index = static_cast<int>((end_angle - angle_min) / angle_increment);
-
+        
         start_index = std::max(0, start_index);
         end_index = std::min(static_cast<int>(msg->ranges.size()) - 1, end_index);
 
-        RCLCPP_INFO(this->get_logger(), "Ranges from 0 to 2.09 radians:");
+        bool obstacle_detected = false;
+        
+        
+        sensor_msgs::msg::LaserScan filtered_scan = *msg;
+
+       
         for (int i = start_index; i <= end_index; ++i)
         {
-            float angle = angle_min + i * angle_increment;
-            RCLCPP_INFO(this->get_logger(), "Angle %.2f rad: Range %f", angle, msg->ranges[i]);
+            if (msg->ranges[i] < obstacle_threshold && msg->ranges[i] >= msg->range_min)
+            {
+                float angle = msg->angle_min + i * msg->angle_increment;
+                RCLCPP_INFO(this->get_logger(), "Obstacle detected at Angle: %.2f rad, Range: %.2f m", angle, msg->ranges[i]);
+                obstacle_detected = true;
+                filtered_scan.ranges[i] = msg->ranges[i]; 
+            }
+            else
+            {
+                filtered_scan.ranges[i] = msg->range_max;  
+            }
+
+            
+            float angle = msg->angle_min + i * msg->angle_increment;
+            RCLCPP_INFO(this->get_logger(), "Angle: %.2f rad, Range: %.2f m", angle, filtered_scan.ranges[i]);
         }
+
+      
+        if (!obstacle_detected)
+        {
+            RCLCPP_INFO(this->get_logger(), "No obstacle detected from -60° to +60°. Range: Infinity");
+            for (int i = start_index; i <= end_index; ++i)
+            {
+                filtered_scan.ranges[i] = msg->range_max;  
+            }
+        }
+
+        
+        filtered_scan_publisher_->publish(filtered_scan);
     }
 
+    
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subscription_;
+    
+    
+    rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr filtered_scan_publisher_;
 };
 
 int main(int argc, char *argv[])
