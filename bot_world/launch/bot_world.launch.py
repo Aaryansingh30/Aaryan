@@ -4,25 +4,14 @@ from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription , ExecuteProcess
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
+from launch.substitutions import PathJoinSubstitution
+from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
-
-    package_name = "bot_description"
     world_name="bot_world"
-    robot_name = "AaryanSingh_Bot"
+    robot_name="AaryanSingh_bot"
+    package_name="bot_description"
 
-    # Path to the robot's URDF
-    urdf_file = os.path.join(
-        get_package_share_directory(package_name),
-        'urdf',
-        'bot.urdf.xacro'
-    )
-
-    # Convert xacro to XML
-    with open(urdf_file, 'r') as infp:
-        robot_description = infp.read()
-
-    # Launch RViz
     rviz_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
             os.path.join(get_package_share_directory(package_name), 'launch', 'rviz.launch.py')
