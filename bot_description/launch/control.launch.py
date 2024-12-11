@@ -10,19 +10,18 @@ def generate_launch_description():
     spawn_launch_path = PathJoinSubstitution(
         [FindPackageShare('bot_description'), 'launch', 'spawn.launch.py']
     )
-
-    return LaunchDescription([
-        # Include the spawn.launch.py file
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(spawn_launch_path)
-        ),
-
-        # Teleop twist keyboard in a new terminal
-        ExecuteProcess(
+    teleop_keyboard=ExecuteProcess(
             cmd=[
                 'gnome-terminal', '--', 
                 'ros2', 'run', 'teleop_twist_keyboard', 'teleop_twist_keyboard',
             ],
             output='screen'
         )
+
+    return LaunchDescription([
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(spawn_launch_path)
+        ),
+        
+        teleop_keyboard,
     ])
